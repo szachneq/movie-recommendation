@@ -61,6 +61,6 @@ def get_recommendations(title, movies, similarity_matrix):
     # Return the top 10 most similar movies
     return movies['Series_Title'].iloc[movie_indices]
 
-recommended_movies = get_recommendations('The Matrix', movies, similarity_matrix)
+recommended_movies = get_recommendations('The Lord of the Rings: The Return of the King', movies, similarity_matrix)
 print(recommended_movies)
 
