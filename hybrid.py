@@ -28,8 +28,7 @@ movies[['IMDB_Rating', 'Meta_score', 'No_of_Votes']] = scaler.fit_transform(
 )
 
 # Combine all features into a single similarity matrix for content-based filtering
-combined_features = np.hstack([text_matrix.toarray(), tfidf_matrix.toarray(),
-                               movies[['IMDB_Rating', 'Meta_score', 'No_of_Votes']].values])
+combined_features = np.hstack([ text_matrix.toarray(), tfidf_matrix.toarray() ])
 
 # Compute similarity matrix for content-based features
 similarity_matrix = cosine_similarity(combined_features)
@@ -85,6 +84,10 @@ def get_combined_recommendations(title, user_id, movies, similarity_matrix, rati
     return filtered_recommendations
 
 # Example of usage
-user_id = 1  # Example user ID
-recommended_movies = get_combined_recommendations('The Shawshank Redemption', user_id, movies, similarity_matrix, ratings_matrix)
-print(recommended_movies)
+user_id = 1   # Example user ID
+recommended_movies = get_combined_recommendations('Finding Nemo', user_id, movies, similarity_matrix, ratings_matrix)
+num = 1
+for recommended_movie in recommended_movies:
+    if (num > 5): break
+    print(f'{num}. {recommended_movie}')
+    num = num + 1
