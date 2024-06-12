@@ -35,14 +35,52 @@ df_merged = pd.merge(df_ratings, df_movies, left_on='movieId', right_on='id', ho
 
 # Drop the now redundant 'id' column from movies
 df_merged.drop('id', axis=1, inplace=True)
+df_merged.drop('movieId', axis=1, inplace=True)
 
 # Optionally rename 'original_title' back to something indicating it's the movie ID now
-df_merged.rename(columns={'original_title': 'movieTitle'}, inplace=True)
+df_merged.rename(columns={'userId': 'user_id'}, inplace=True)
+df_merged.rename(columns={'original_title': 'Series_Title'}, inplace=True)
 
-df_merged = df_merged.dropna(subset=['movieTitle'])
+df_merged = df_merged.dropna(subset=['Series_Title'])
+
+df_merged = df_merged[['user_id', 'Series_Title', 'rating']]
 
 # Save the merged data back to CSV
 df_merged.to_csv('merged_ratings.csv', index=False)
 
 print("Merging completed. The output is saved as 'merged_ratings.csv'.")
 
+# ----------
+
+# Calculate C, the mean of all ratings in the dataset
+C = df_merged['rating'].mean()
+
+# Calculate the number of ratings for each movie and the average rating
+rating_stats = df_merged.groupby('Series_Title')['rating'].agg(['count', 'mean'])
+
+# Calculate m as the minimum votes required to be considered, e.g., the 50th percentile
+m = rating_stats['count'].quantile(0.50)
+
+# Define the weighted rating calculation
+def weighted_rating(x, m=m, C=C):
+    v = x['count']
+    R = x['mean']
+    return (v/(v+m) * R) + (m/(m+v) * C)
+
+# Apply the weighted rating formula
+rating_stats['weighted_rating'] = rating_stats.apply(weighted_rating, axis=1)
+
+# Sort the results by the weighted rating in descending order
+weighted_ratings = rating_stats['weighted_rating'].sort_values(ascending=False)
+
+# Print the sorted weighted ratings
+# print(weighted_ratings)
+weighted_ratings.to_csv('weighted_ratings.csv')
+
+# average_ratings = df_merged.groupby('Series_Title')['rating'].mean()
+
+# # Sort the results by movie title
+# average_ratings = average_ratings.sort_values(ascending=False)
+
+# # Save the data
+# average_ratings.to_csv('average_ratings.csv')
