@@ -35,10 +35,9 @@ def get_recommendations(movie_title):
     similarity_scores = sorted(similarity_scores, key=lambda x: x[1], reverse=True)
     similarity_scores = [score for score in similarity_scores if score[0] != idx]
     similarity_scores = similarity_scores[:10]
-    anime_indices_list = [i[0] for i in similarity_scores]
-    return df_imdb['Series_Title'].iloc[anime_indices_list]
+    movie_indices_list = [i[0] for i in similarity_scores]
+    return df_imdb['Series_Title'].iloc[movie_indices_list]
 
-# Function to recommend anime based on user input
 def recommend(movie_title):
     # Check if the movie exists in the dataset
     if movie_title in movie_indices:
