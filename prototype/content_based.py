@@ -48,5 +48,5 @@ def recommend(movie_title):
         print("Movie not found")
 
 if __name__ == "__main__":
-    movie_title = 'Toy Story'
+    movie_title = 'The Shawshank Redemption'
     recommend(movie_title)
