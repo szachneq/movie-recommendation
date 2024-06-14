@@ -1,66 +1,52 @@
 import pandas as pd
+import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
-from sklearn.preprocessing import MinMaxScaler
-import numpy as np
 
-# Load data
-data_path = 'imdb.csv'
-movies = pd.read_csv(data_path)
+df_imdb = pd.read_csv('imdb.csv')
 
-# Properly reassign DataFrame after dropping duplicates and missing values
-movies = movies.drop_duplicates(subset='Series_Title', keep='first')
-movies = movies.dropna(subset=['Overview', 'Genre', 'Director', 'Star1', 'Star2', 'Star3', 'Star4'])
-
-# Drop useless columns and reassigned
-movies = movies.drop(columns=['Poster_Link'])
-
-# Feature Engineering
-# Text vectorization for 'Overview'
-tfidf = TfidfVectorizer(stop_words='english')
-tfidf_matrix = tfidf.fit_transform(movies['Overview'])
-
-# Concatenate all text data that will be used to compute similarity
-movies['all_text'] = movies['Genre'] + ' ' + movies['Director'] + ' ' + \
-                     movies['Star1'] + ' ' + movies['Star2'] + ' ' + \
-                     movies['Star3'] + ' ' + movies['Star4']
-text_matrix = tfidf.fit_transform(movies['all_text'])
-# Normalize numerical features after ensuring no NaNs are left
-scaler = MinMaxScaler()
-movies[['IMDB_Rating', 'Meta_score', 'No_of_Votes']] = scaler.fit_transform(
-    movies[['IMDB_Rating', 'Meta_score', 'No_of_Votes']].fillna(0)  # Fill NaNs with 0 or handle appropriately
-)
+tfidf_vectorizer = TfidfVectorizer(stop_words='english')
+genre_matrix = tfidf_vectorizer.fit_transform(df_imdb['Genre'])
+overview_matrix = tfidf_vectorizer.fit_transform(df_imdb['Overview'])
+df_imdb['Actors'] = f"{df_imdb['Star1']}, {df_imdb['Star2']}, {df_imdb['Star3']}, {df_imdb['Star4']}"
+actor_matrix = tfidf_vectorizer.fit_transform(df_imdb['Actors'])
 
 # Combine all features into a single similarity matrix
-combined_features = np.hstack([text_matrix.toarray(), tfidf_matrix.toarray(),
-                               movies[['IMDB_Rating', 'Meta_score', 'No_of_Votes']].values])
+combined_features = np.hstack([
+    genre_matrix.toarray(),
+    overview_matrix.toarray(),
+    actor_matrix.toarray(),
+])
+
 # Check for NaNs before computing similarity
 if np.isnan(combined_features).any():
     print("NaN values detected in combined features.")
+    exit()
 else:
     similarity_matrix = cosine_similarity(combined_features)
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# Creating a Series with movie titles as the index
+movie_indices = pd.Series(df_imdb.index, index=df_imdb['Series_Title']).drop_duplicates()
 
-def get_recommendations(title, movies, similarity_matrix):
-    # Get the index of the movie that matches the title
-    idx = movies.index[movies['Series_Title'] == title].tolist()[0]
+# Generate recommendations based on cosine similarity
+def get_recommendations(movie_title):
+    idx = movie_indices[movie_title]
+    similarity_scores = list(enumerate(similarity_matrix[idx]))
+    similarity_scores = sorted(similarity_scores, key=lambda x: x[1], reverse=True)
+    similarity_scores = [score for score in similarity_scores if score[0] != idx]
+    similarity_scores = similarity_scores[:10]
+    movie_indices_list = [i[0] for i in similarity_scores]
+    return df_imdb['Series_Title'].iloc[movie_indices_list]
 
-    # Get the pairwsie similarity scores of all movies with that movie
-    sim_scores = list(enumerate(similarity_matrix[idx]))
+def recommend(movie_title):
+    # Check if the movie exists in the dataset
+    if movie_title in movie_indices:
+        recommendations = get_recommendations(movie_title)
+        for i, recommendation in enumerate(recommendations, 1):
+            print(f"{i}. {recommendation}")
+    else:
+        print("Movie not found")
 
-    # Sort the movies based on the similarity scores
-    sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)
-
-    # Get the scores of the 10 most similar movies
-    sim_scores = sim_scores[1:11]  # Skip the first entry because it's the movie itself
-
-    # Get the movie indices
-    movie_indices = [i[0] for i in sim_scores]
-
-    # Return the top 10 most similar movies
-    return movies['Series_Title'].iloc[movie_indices]
-
-recommended_movies = get_recommendations('Monsters, Inc.', movies, similarity_matrix)
-print(recommended_movies)
-
+if __name__ == "__main__":
+    movie_title = 'The Shawshank Redemption'
+    recommend(movie_title)
