@@ -36,7 +36,14 @@ def get_recommendations(movie_title):
     similarity_scores = [score for score in similarity_scores if score[0] != idx]
     similarity_scores = similarity_scores[:10]
     movie_indices_list = [i[0] for i in similarity_scores]
-    return df_imdb['Series_Title'].iloc[movie_indices_list]
+    return df_imdb['Series_Title'].iloc[movie_indices_list][:10]
+
+def get_recommend_list(movie_title):
+    # Check if the movie exists in the dataset
+    if movie_title in movie_indices:
+        return get_recommendations(movie_title)
+    else:
+        return []
 
 def recommend(movie_title):
     # Check if the movie exists in the dataset

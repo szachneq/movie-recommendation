@@ -36,6 +36,13 @@ def get_recommendations(movie_title):
     
     return recommended_movies.index[:10]
 
+def get_recommend_list(movie_title):
+    # Check if the movie exists in the dataset
+    if movie_title in user_item_matrix.columns:
+        return get_recommendations(movie_title)
+    else:
+        return []
+
 def recommend(movie_title):
     if movie_title in user_item_matrix.columns:
         recommendations = get_recommendations(movie_title)
